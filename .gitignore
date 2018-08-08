@@ -1,0 +1,6 @@
+.idea/
+venv/
+config.ini
+__pycache__/
+Downloads/*
+*.log
