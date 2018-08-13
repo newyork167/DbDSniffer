@@ -7,10 +7,13 @@ import tkinter as tk
 import threading
 import sys
 import re
+import string
 
 print(platform.architecture())
 
 os_platform = platform.system()
+
+output_file = open('output.txt', 'w+')
 
 if os_platform == "Darwin":
     interfaces = [{"name": "en0"}]
@@ -56,30 +59,43 @@ killers = {
 
 killer_perks = [
     'agitation',
-    'nursescalling',
+    'bbqandchili',
+    'bbqandchilli',
+    'barbecueandchili',
+    'barbecueandchilli',
     'bittermurmur',
     'bloodhound',
     'brutalstrength',
     'deerstalker',
     'distressing',
     'enduring',
+    'franklin',
+    'fireup',
+    'firedup',
     'insidious',
     'irongrasp',
+    'iron_grasp',
     'lightborn',
     'nooneescapesdeath',
+    'no_one_escapes_death',
+    'nursescalling',
+    'nursecalling',
     'predator',
+    'rememberme',
     'shadowborn',
     'sloppybutcher',
     'spiesfromtheshadows',
     'stridor',
     'thanatophobia',
+    'thrillofthehunt',
+    'thrill_of_the_hunt',
     'tinkerer',
     'underperform',
     'unnervingpresence',
     'unrelenting',
     'whispers',
-    'bbqandchili',
-    'barbecueandchili'
+    'hex_ruin',
+    'tenacity'
 ]
 
 killer_addons = {
@@ -141,26 +157,41 @@ killer_addons = {
             ]
 }
 
+game_maps = {
+    "Haddonfield": ['blueprints/props/05-suburbs/bp_streetpatch'],
+    "Asylum": ['blueprints/props/04-asylum/bp_asy_']
+}
+
+start_ordinal_lower = 0x05
+start_ordinal_upper = 0x85
+ordinal_step = 0x4
+chat_map_lower = dict(zip(string.ascii_lowercase, [x for x in range(start_ordinal_lower, start_ordinal_lower + len(string.ascii_lowercase) * ordinal_step, ordinal_step)]))
+chat_map_upper = dict(zip(string.ascii_uppercase, [x for x in range(start_ordinal_upper, start_ordinal_upper + len(string.ascii_lowercase) * ordinal_step, ordinal_step)]))
+
+chat_map = {**chat_map_lower, **chat_map_upper}
+
 
 def check_for_survivor_perk(packet_str):
-    k_perks = [m.start() for m in re.finditer('survivorperks', packet_str)]
+    k_perks = [m.start() for m in re.finditer('survivorperk', packet_str)]
 
     if len(k_perks) > 0:
-        print("Found survivor perks")
         for k_perk_pos in k_perks:
-            print(packet_str[k_perk_pos:].split('\\x')[0])
+            survivor_perk_string = packet_str[k_perk_pos:].split('\\x')[0]
+            print("Found survivor perk - " + survivor_perk_string)
+            output_to_file("Found surivor perk: {}".format(survivor_perk_string), packet_str)
 
         return True
     return False
 
 
 def check_for_killer_perk(packet_str):
-    k_perks = [m.start() for m in re.finditer('killerperks', packet_str)]
+    k_perks = [m.start() for m in re.finditer('killerperk', packet_str)]
 
     if len(k_perks) > 0:
-        print("Found killer perks")
         for k_perk_pos in k_perks:
-            print(packet_str[k_perk_pos:].split('\\x')[0])
+            killer_perk_string = packet_str[k_perk_pos:].split('\\x')[0]
+            print("Found killer perk - " + killer_perk_string)
+            output_to_file("Found killer perk: {}".format(killer_perk_string), packet_str)
 
         return True
     return False
@@ -171,13 +202,100 @@ def check_for_blueprints(packet_str):
 
     if len(blueprint_list) > 0:
         for bp in blueprint_list:
-            print(packet_str[bp:].split('\\x')[0])
+            bp_string = packet_str[bp:].split('\\x')[0]
+            # if all(check_str not in packet_str for check_str in ['statuseffects', 'survivorperks', 'killerperks', 'gameplayelements']):
+            if 'statuseffects' not in bp_string and 'perkconditions' not in bp_string and 'survivorperks' not in bp_string and 'killerperks' not in bp_string:
+                if 'itemaddons' in bp_string:
+                    print('\tFound addon: {}'.format(bp_string))
+                else:
+                    print("\t\t - " + bp_string)
+                output_to_file("Found blueprint: {}".format(bp_string), packet_str)
 
         return True
     return False
 
 
+def check_for_perks(packet_str):
+    perk_detected = False
+
+    for perk in killer_perks:
+        if perk in packet_str:
+            perk_detected = True
+            print("Detected Perk: {}".format(perk))
+            output_to_file("Detected Perk: {}".format(perk), packet_str)
+
+    return perk_detected
+
+
+def check_for_killer_addons(packet_str):
+    killer_addon_detected = False
+
+    for killer_addon in killer_addons:
+        for addon in killer_addons[killer_addon]:
+            if addon in packet_str:
+                killer_addon_detected = True
+                print("Detected Addon ({}): {}".format(killer_addon, addon))
+                output_to_file("Detected Addon ({}): {}".format(killer_addon, addon), packet_str)
+
+    return killer_addon_detected
+
+
+def check_for_killer(packet_str):
+    killer_detected = False
+
+    for killer in killers:
+        if any(substring in packet_str for substring in killers[killer]):
+            killer_detected = True
+            print("***Detected Killer***: {}".format(killer))
+            output_to_file("Detected Killer: {}".format(killer), packet_str)
+
+    return killer_detected
+
+
+def detect_chat_message(packet_str):
+    # TODO: Detect chat messages
+    return False
+
+
+def check_map(packet_str):
+    map_detected = False
+
+    for game_map in game_maps:
+        if any(gm in packet_str for gm in game_maps[game_map]):
+            map_detected = True
+            print("Detected Map: {}".format(game_map))
+
+    return map_detected
+
+
+def output_to_file(s, packet_str):
+    output_file.write("{}\n\t{}\n".format(s, packet_str))
+    output_file.flush()
+
+
+def handle_packet(packet_str):
+    try:
+        killer_detected = check_for_killer(packet_str=packet_str)
+
+        perk_detected = check_for_perks(packet_str=packet_str)
+
+        killer_addon_detected = check_for_killer_addons(packet_str=packet_str)
+
+        killer_perk_detected = check_for_killer_perk(packet_str=packet_str)
+
+        survivor_perk_detected = check_for_survivor_perk(packet_str=packet_str)
+
+        extra_detected = check_for_blueprints(packet_str=packet_str)
+
+        map_detected = check_map(packet_str=packet_str)
+    except Exception as ex:
+        print(ex)
+
+
 class Sniffer(Thread):
+    ip_killer_detected = {}
+    last_killer_ip = '0'
+
     def __init__(self, interface=interfaces[0]['name']):
         super().__init__()
 
@@ -226,45 +344,7 @@ class Sniffer(Thread):
 
             if port_max > dport > port_min or port_max > sport > port_min:
                 packet_str = str(packet).lower()
-
-                killer_detected = False
-                perk_detected = False
-                killer_addon_detected = False
-                extra_detected = False
-
-                try:
-                    for killer in killers:
-                        if any(substring in packet_str for substring in killers[killer]):
-                            killer_detected = True
-                            print("Detected Killer: {}".format(killer))
-
-                    for perk in killer_perks:
-                        if perk in packet_str:
-                            # Check if this is part of a status effect string
-                            # if 'blueprints/perks/statuseffects/' in packet_str:
-                            #     status_effect_strings = [m.start() for m in re.finditer('blueprints/perks/statuseffects/', packet_str)]
-                            #     status_effect_len = 0
-                            #     for status_effect_string in status_effect_strings:
-                            #         if perk in packet_str[status_effect_string:].split('\\x')[0]:
-                            #             status_effect_len += 1
-                            #     if status_effect_len == packet_str.count(perk):
-                            #         continue
-                            perk_detected = True
-                            print("Detected Perk: {}".format(perk))
-
-                    for killer_addon in killer_addons:
-                        for addon in killer_addons[killer_addon]:
-                            if addon in packet_str:
-                                killer_addon_detected = True
-                                print("Detected Addon ({}): {}".format(killer_addon, addon))
-
-                    check_for_killer_perk(packet_str)
-
-                    check_for_survivor_perk(packet_str)
-
-                    check_for_blueprints(packet_str)
-                except Exception as ex:
-                    print(ex)
+                handle_packet(packet_str)
 
 
 def startSniffer():
@@ -279,6 +359,8 @@ def startSniffer():
     except KeyboardInterrupt:
         print("[*] Stop sniffing")
         sniffer.join(2.0)
+
+        output_file.close()
 
         if sniffer.isAlive():
             sniffer.socket.close()
