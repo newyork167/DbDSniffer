@@ -6,13 +6,19 @@ from scapy.all import *
 from threading import Thread, Event
 from time import sleep
 import platform
-from tkinter import Tk, Label, Button, messagebox
+from tkinter import Tk, Label, Button, messagebox, StringVar
 import tkinter as tk
 import threading
 import sys
 import re
 import string
 import configuration as config
+import socket
+from requests import get
+import time
+import geoip2.database
+
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 console_queue = queue.Queue()
 perk_queue = queue.Queue()
@@ -34,10 +40,27 @@ else:
     interfaces = [{"name": "eth0"}]
 
 
+def get_local_ip_address():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
+
+
+def get_external_ip_address():
+    return get('https://api.ipify.org').text
+
+
+localhost_ip = str(get_local_ip_address())
 current_ip = ""
+killer_ip = ""
+last_killer_ip = ""
+last_killer_ip_time = current_milli_time()
+killer_ping = 999
 packet_log = []
 last_packet = ""
 substring_list = ('_leg', 'game', '_torso', '_head', 'item_', 'blueprint', 'map')
+
+print("Local IP detected as: {}".format(localhost_ip))
 
 
 class Killer:
@@ -223,7 +246,8 @@ def get_killer_portrait_path(killer_name):
 
 def get_temp_image_path():
     portrait_path = config.get('dbd', 'character_portrait_path')
-    temp_image_name = "CM_charSelect_portrait.png"
+    portrait_path = "."
+    temp_image_name = "placeholder.jpg"
     temp_image_path = "{portrait_path}{separator}{killer_portrait}".format(
         portrait_path=portrait_path,
         separator=os.sep,
@@ -337,6 +361,17 @@ def check_map(packet_str):
     return map_detected
 
 
+def get_killer_geoip():
+    reader = geoip2.database.Reader('GeoLite2-City.mmdb')
+    response = reader.city(killer_ip)
+
+    return "({city}, {state}, {country})".format(
+        city=response.city.name,
+        state=response.subdivisions.most_specific.name,
+        country=response.country.name
+    )
+
+
 def detect_lobby_finished(packet_str):
     return "\\xbe\\xef\\xfa\\xce" in packet_str
 
@@ -369,7 +404,7 @@ def handle_packet(packet_str):
         if killer_detected:
             current_killer_portrait_path = get_killer_portrait_path(killer_detected)
 
-        if out_of_lobby_or_match_finished:
+        if out_of_lobby_or_match_finished and clear_portrait_and_perks_list is False:
             clear_portrait_and_perks_list = True
             queue_print("Left Lobby/Match")
 
@@ -415,7 +450,7 @@ class Sniffer(Thread):
         return self.stop_sniffer.isSet()
 
     def print_packet(self, packet):
-        global last_packet
+        global last_packet, killer_ip, last_killer_ip_time, killer_ping
 
         ip_layer = packet.getlayer(IP)
         ip_dest = ip_layer.dst
@@ -433,7 +468,29 @@ class Sniffer(Thread):
 
             if port_max > dport > port_min or port_max > sport > port_min:
                 packet_str = str(packet).lower()
-                handle_packet(packet_str)
+
+                if len(packet[UDP].payload) == 56:
+                    # Handle showing IP found from STUN protocol
+                    if ip_dest == localhost_ip:
+                        killer_ip = str(ip_src)
+                    else:
+                        killer_ip = str(ip_dest)
+                    last_killer_ip_time = current_milli_time()
+                elif len(packet[UDP].payload) == 68:
+                    # Handle showing IP found from STUN protocol
+                    if ip_dest == localhost_ip:
+                        killer_ip = str(ip_src)
+                    else:
+                        killer_ip = str(ip_dest)
+
+                    # Determine ping to killer
+                    current_time = current_milli_time()
+                    current_killer_ping = current_time - last_killer_ip_time
+                    if current_killer_ping > 10:
+                        print("Killer ping: {}".format(killer_ping))
+                        killer_ping = current_killer_ping
+                else:
+                    handle_packet(packet_str)
 
 
 def start_sniffer():
@@ -481,10 +538,10 @@ class App(tk.Tk):
         self.winfo_toplevel().title("DbD Sniffer")
 
         # Base Geometry setup
-        default_geometry = (923, 470)
+        default_geometry = (923, 510)
         self.geometry("{}x{}".format(default_geometry[0], default_geometry[1]))
         self.configure(background='grey')
-        # self.resizable(False, False)
+        self.resizable(False, False)
 
         # Setup the UI elements
         self.ui_setup()
@@ -501,6 +558,12 @@ class App(tk.Tk):
         self.process_sniffed_data()
 
     def ui_setup(self):
+        self.killer_ip = StringVar()
+        self.killer_ip.set("Killer IP: Not Connected")
+
+        self.killer_geolocation = StringVar()
+        self.killer_geolocation.set("Not Connected")
+
         # Handle top frame
         self.frame_label = tk.Frame(self, padx=self.default_padx, pady=self.default_pady)
         self.text = tk.Text(self, wrap='word', font='arial 11')
@@ -511,7 +574,14 @@ class App(tk.Tk):
 
         # Make map label
         self.map_label = tk.Label(self, text="Current Map: N/A")
-        self.map_label.grid(row=3, columnspan=3, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
+        self.map_label.grid(row=3, columnspan=1, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
+
+        # Show killer IP
+        self.killer_ip_label = tk.Label(self, textvariable=self.killer_ip)
+        self.killer_ip_label.grid(row=3, column=1, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
+
+        self.killer_geo_label = tk.Label(self, textvariable=self.killer_geolocation)
+        self.killer_geo_label.grid(row=4, column=1, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
 
         # Make perks list
         self.perk_list_frame = tk.Frame(self, height=130, width=self.default_image_size[1])
@@ -541,48 +611,6 @@ class App(tk.Tk):
 
         last_current_killer_portrait_path = current_killer_portrait_path
 
-    def test_ui_setup(self):
-        # create all of the main containers
-        top_frame = tk.Frame(self, bg='cyan', width=450, height=50, pady=3)
-        center = tk.Frame(self, bg='gray2', width=50, height=40, padx=3, pady=3)
-        btm_frame = tk.Frame(self, bg='white', width=450, height=45, pady=3)
-        btm_frame2 = tk.Frame(self, bg='lavender', width=450, height=60, pady=3)
-
-        # layout all of the main containers
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        top_frame.grid(row=0, sticky="ew")
-        center.grid(row=1, sticky="nsew")
-        btm_frame.grid(row=3, sticky="ew")
-        btm_frame2.grid(row=4, sticky="ew")
-
-        # create the widgets for the top frame
-        model_label = Label(top_frame, text='Model Dimensions')
-        width_label = Label(top_frame, text='Width:')
-        length_label = Label(top_frame, text='Length:')
-        entry_W = tk.Entry(top_frame, background="pink")
-        entry_L = tk.Entry(top_frame, background="orange")
-
-        # layout the widgets in the top frame
-        model_label.grid(row=0, columnspan=3)
-        width_label.grid(row=1, column=0)
-        length_label.grid(row=1, column=2)
-        entry_W.grid(row=1, column=1)
-        entry_L.grid(row=1, column=3)
-
-        # create the center widgets
-        center.grid_rowconfigure(0, weight=1)
-        center.grid_columnconfigure(1, weight=1)
-
-        ctr_left = tk.Frame(center, bg='blue', width=100, height=190)
-        ctr_mid = tk.Frame(center, bg='yellow', width=250, height=190, padx=3, pady=3)
-        ctr_right = tk.Frame(center, bg='green', width=100, height=190, padx=3, pady=3)
-
-        ctr_left.grid(row=0, column=0, sticky="ns")
-        ctr_mid.grid(row=0, column=1, sticky="nsew")
-        ctr_right.grid(row=0, column=2, sticky="ns")
-
     def resizer(self, event):
         # if hasattr(self, 'text'):
         #     self.text.config(width=event.width, height=event.height)
@@ -590,7 +618,7 @@ class App(tk.Tk):
         pass
 
     def process_sniffed_data(self):
-        global current_killer_portrait_path, clear_portrait_and_perks_list
+        global current_killer_portrait_path, clear_portrait_and_perks_list, killer_ip, last_killer_ip,  killer_ping
 
         while self.queue.qsize():
             try:
@@ -613,6 +641,8 @@ class App(tk.Tk):
                         self.map_label.update_idletasks()
                         self.perk_list.delete('1.0', tk.END)
                         self.set_killer_portrait(get_temp_image_path())
+                        killer_ip = "Not Connected"
+                        killer_ping = "N/A"
                         queue_print("-" * 50)
 
                     self.text.insert('end', queued_string)
@@ -622,6 +652,15 @@ class App(tk.Tk):
 
         if current_killer_portrait_path != last_current_killer_portrait_path:
             self.set_killer_portrait(current_killer_portrait_path)
+
+        if last_killer_ip != killer_ip:
+            last_killer_ip = killer_ip
+            if killer_ip != "Not Connected":
+                killer_geolocation = get_killer_geoip()
+            else:
+                killer_geolocation = "N/A"
+            self.killer_geolocation.set(killer_geolocation)
+            self.killer_ip.set("Killer IP: {} - {}".format(killer_ip, killer_ping))
 
         self.after(100, self.process_sniffed_data)
 
