@@ -1,15 +1,25 @@
+import queue
+from pathlib import Path
+from queue import Queue
+from PIL import ImageTk, Image
 from scapy.all import *
 from threading import Thread, Event
 from time import sleep
 import platform
-from tkinter import Tk, Label, Button
+from tkinter import Tk, Label, Button, messagebox
 import tkinter as tk
 import threading
 import sys
 import re
 import string
+import configuration as config
 
-print(platform.architecture())
+console_queue = queue.Queue()
+perk_queue = queue.Queue()
+
+sniffer_thread_quit = False
+current_killer_portrait_path = ""
+last_current_killer_portrait_path = ""
 
 os_platform = platform.system()
 
@@ -159,7 +169,10 @@ killer_addons = {
 
 game_maps = {
     "Haddonfield": ['blueprints/props/05-suburbs/bp_streetpatch'],
-    "Asylum": ['blueprints/props/04-asylum/bp_asy_']
+    "Asylum": ['blueprints/props/04-asylum/bp_asy_'],
+    "Red Forest": ['blueprints/props/08-boreal'],
+    'Junkyard': ['blueprints/props/02-junkyard'],
+    "Swamp": ['blueprints/props/06-swamp']
 }
 
 start_ordinal_lower = 0x05
@@ -171,13 +184,49 @@ chat_map_upper = dict(zip(string.ascii_uppercase, [x for x in range(start_ordina
 chat_map = {**chat_map_lower, **chat_map_upper}
 
 
+def queue_print(s):
+    console_queue.put(s.rstrip() + "\n")
+    print(s)
+
+
+def get_killer_portrait_path(killer_name):
+    portrait_path = config.get('dbd', 'character_portrait_path')
+    killer_portrait = config.get('killer_portraits', killer_name)
+    killer_portrait_path = "{portrait_path}{separator}{killer_portrait}".format(portrait_path=portrait_path, separator=os.sep, killer_portrait=killer_portrait)
+
+    killer_portrait_file = Path(killer_portrait_path)
+    if killer_portrait_file.is_file():
+        print("Getting Killer Portrait: {}".format(killer_portrait_path))
+        return killer_portrait_path
+    print("Could not get Killer Portrait: {}".format(killer_portrait_path))
+    return ""
+
+
+def get_temp_image_path():
+    portrait_path = config.get('dbd', 'character_portrait_path')
+    temp_image_name = "CM_charSelect_portrait.png"
+    temp_image_path = "{portrait_path}{separator}{killer_portrait}".format(
+        portrait_path=portrait_path,
+        separator=os.sep,
+        killer_portrait=temp_image_name
+    )
+
+    return temp_image_path
+
+
+def get_random_killer():
+    import random
+
+    return random.choice(list(dict(config.config.items('killer_portraits')).keys()))
+
+
 def check_for_survivor_perk(packet_str):
     k_perks = [m.start() for m in re.finditer('survivorperk', packet_str)]
 
     if len(k_perks) > 0:
         for k_perk_pos in k_perks:
             survivor_perk_string = packet_str[k_perk_pos:].split('\\x')[0]
-            print("Found survivor perk - " + survivor_perk_string)
+            queue_print("Found survivor perk - " + survivor_perk_string)
             output_to_file("Found surivor perk: {}".format(survivor_perk_string), packet_str)
 
         return True
@@ -190,7 +239,7 @@ def check_for_killer_perk(packet_str):
     if len(k_perks) > 0:
         for k_perk_pos in k_perks:
             killer_perk_string = packet_str[k_perk_pos:].split('\\x')[0]
-            print("Found killer perk - " + killer_perk_string)
+            queue_print("Found killer perk - " + killer_perk_string)
             output_to_file("Found killer perk: {}".format(killer_perk_string), packet_str)
 
         return True
@@ -206,9 +255,9 @@ def check_for_blueprints(packet_str):
             # if all(check_str not in packet_str for check_str in ['statuseffects', 'survivorperks', 'killerperks', 'gameplayelements']):
             if 'statuseffects' not in bp_string and 'perkconditions' not in bp_string and 'survivorperks' not in bp_string and 'killerperks' not in bp_string:
                 if 'itemaddons' in bp_string:
-                    print('\tFound addon: {}'.format(bp_string))
+                    queue_print('\tFound addon: {}'.format(bp_string))
                 else:
-                    print("\t\t - " + bp_string)
+                    queue_print("\t\t - " + bp_string)
                 output_to_file("Found blueprint: {}".format(bp_string), packet_str)
 
         return True
@@ -221,35 +270,36 @@ def check_for_perks(packet_str):
     for perk in killer_perks:
         if perk in packet_str:
             perk_detected = True
-            print("Detected Perk: {}".format(perk))
+            queue_print("Detected Perk: {}".format(perk))
             output_to_file("Detected Perk: {}".format(perk), packet_str)
 
     return perk_detected
 
 
 def check_for_killer_addons(packet_str):
+    global current_killer_portrait_path
+
     killer_addon_detected = False
 
     for killer_addon in killer_addons:
         for addon in killer_addons[killer_addon]:
             if addon in packet_str:
                 killer_addon_detected = True
-                print("Detected Addon ({}): {}".format(killer_addon, addon))
+                current_killer_portrait_path = get_killer_portrait_path(killer_addon)
+                queue_print("Detected Addon ({}): {}".format(killer_addon, addon))
                 output_to_file("Detected Addon ({}): {}".format(killer_addon, addon), packet_str)
 
     return killer_addon_detected
 
 
 def check_for_killer(packet_str):
-    killer_detected = False
-
     for killer in killers:
         if any(substring in packet_str for substring in killers[killer]):
-            killer_detected = True
-            print("***Detected Killer***: {}".format(killer))
+            queue_print("***Detected Killer***: {}".format(killer))
             output_to_file("Detected Killer: {}".format(killer), packet_str)
+            return killer
 
-    return killer_detected
+    return ""
 
 
 def detect_chat_message(packet_str):
@@ -263,7 +313,7 @@ def check_map(packet_str):
     for game_map in game_maps:
         if any(gm in packet_str for gm in game_maps[game_map]):
             map_detected = True
-            print("Detected Map: {}".format(game_map))
+            queue_print("Detected Map: {}".format(game_map))
 
     return map_detected
 
@@ -274,6 +324,8 @@ def output_to_file(s, packet_str):
 
 
 def handle_packet(packet_str):
+    global current_killer_portrait_path
+
     try:
         killer_detected = check_for_killer(packet_str=packet_str)
 
@@ -288,6 +340,9 @@ def handle_packet(packet_str):
         extra_detected = check_for_blueprints(packet_str=packet_str)
 
         map_detected = check_map(packet_str=packet_str)
+
+        if killer_detected:
+            current_killer_portrait_path = get_killer_portrait_path(killer_detected)
     except Exception as ex:
         print(ex)
 
@@ -296,11 +351,15 @@ class Sniffer(Thread):
     ip_killer_detected = {}
     last_killer_ip = '0'
 
-    def __init__(self, interface=interfaces[0]['name']):
+    def __init__(self, c_queue=None, interface=interfaces[0]['name']):
         super().__init__()
 
-        self.daemon = True
+        if c_queue is None:
+            global console_queue
+            c_queue = console_queue
 
+        self.daemon = True
+        self.queue = c_queue
         self.socket = None
         self.interface = interface
         self.stop_sniffer = Event()
@@ -325,9 +384,9 @@ class Sniffer(Thread):
     def should_stop_sniffer(self, packet):
         return self.stop_sniffer.isSet()
 
-    @staticmethod
-    def print_packet(packet):
+    def print_packet(self, packet):
         global last_packet
+
         ip_layer = packet.getlayer(IP)
         ip_dest = ip_layer.dst
         ip_src = ip_layer.src
@@ -347,17 +406,20 @@ class Sniffer(Thread):
                 handle_packet(packet_str)
 
 
-def startSniffer():
+def start_sniffer():
+    global sniffer_thread_quit
     sniffer = Sniffer()
 
-    print("[*] Start sniffing...")
+    queue_print("[*] Start sniffing...")
     sniffer.start()
 
     try:
         while True:
-            sleep(100)
+            if sniffer_thread_quit:
+                raise KeyboardInterrupt()
+            sleep(2)
     except KeyboardInterrupt:
-        print("[*] Stop sniffing")
+        queue_print("[*] Stop sniffing")
         sniffer.join(2.0)
 
         output_file.close()
@@ -366,49 +428,172 @@ def startSniffer():
             sniffer.socket.close()
 
 
-class App(threading.Thread):
-    entryBox = None
-
-    def __init__(self, tk_root):
-        global last_packet
-        self.root = tk_root
-
-        self.LABEL = Label(ROOT, text="Hello, world!")
-        self.LABEL.pack()
-
-        self.ip_label = Label(self.root, text="Please Input IP")
-        self.ip_label.pack()
-
-        self.entryBox = tk.Entry(self.root, bd=5)
-        self.entryBox.pack()
-
-        self.close_button = Button(self.root, text="Close", command=self.quit)
-        self.close_button.pack()
-
-        self.last_packet_label = Label(self.root, text=last_packet)
-        self.last_packet_label.pack()
-
-        self.t1 = threading.Thread(target=startSniffer)
-        self.t1.start()
-
+class SerialThread(threading.Thread):
+    def __init__(self, queue):
         threading.Thread.__init__(self)
-        self.start()
+        self.queue = queue
 
     def run(self):
-        global current_ip, last_packet
-        loop_active = True
-        while loop_active:
-            if current_ip != self.entryBox.get():
-                current_ip = self.entryBox.get()
-                print("Currently looking for packets from {}".format(current_ip))
-            self.root.update()
+        start_sniffer()
 
-    def quit(self):
-        self.t1.join(2.0)
-        sys.exit(0)
+
+class App(tk.Tk):
+    default_padx = 10
+    default_pady = 10
+
+    default_image_size = (250, 250)
+
+    def __init__(self):
+        global console_queue
+        tk.Tk.__init__(self)
+
+        # Set the title of the screen
+        self.winfo_toplevel().title("DbD Sniffer")
+
+        # Base Geometry setup
+        default_geometry = (923, 470)
+        self.geometry("{}x{}".format(default_geometry[0], default_geometry[1]))
+        self.configure(background='grey')
+        # self.resizable(False, False)
+
+        # Setup the UI elements
+        self.ui_setup()
+        # self.test_ui_setup()
+
+        # Bind window events
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.bind("<Configure>", self.resizer)
+
+        # Start sniffer
+        self.queue = console_queue
+        self.thread = SerialThread(self.queue)
+        self.thread.start()
+        self.process_sniffed_data()
+
+    def ui_setup(self):
+        # Handle top frame
+        self.frame_label = tk.Frame(self, padx=self.default_padx, pady=self.default_pady)
+        self.text = tk.Text(self, wrap='word', font='arial 11')
+        self.text.grid(rowspan=2, column=0, padx=self.default_padx, pady=self.default_pady, sticky=tk.N+tk.S+tk.E+tk.W)
+
+        # Handle killer photo
+        self.set_killer_portrait(get_temp_image_path())
+
+        # Make map label
+        self.map_label = tk.Label(self, text="Current Map: ")
+        self.map_label.grid(row=3, columnspan=3, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
+
+        # Make perks list
+        self.perk_list_frame = tk.Frame(self, height=130, width=self.default_image_size[1])
+        self.perk_list_frame.grid(row=1, column=1)
+        self.perk_list_frame.grid_propagate(False)
+
+        self.perk_list = tk.Text(self.perk_list_frame, font='arial 10')
+        self.perk_list.grid(sticky=tk.E+tk.W)
+
+    def set_killer_portrait(self, image_path):
+        global last_current_killer_portrait_path
+
+        # Open and resize image
+        killer_img = Image.open(image_path)
+        killer_img = killer_img.resize(self.default_image_size, Image.ANTIALIAS)
+
+        # Convert image to ImageTk
+        self.temp_image = ImageTk.PhotoImage(killer_img)
+
+        # If there is already an object update it, else make a new one
+        if hasattr(self, 'killer_portrait'):
+            self.killer_portrait.configure(image=self.temp_image)
+            self.killer_portrait.image=self.temp_image
+        else:
+            self.killer_portrait = tk.Label(self, image=self.temp_image)
+            self.killer_portrait.grid(row=0, column=1, pady=(self.default_pady, 0), sticky=tk.N+tk.S+tk.E+tk.W)
+
+        last_current_killer_portrait_path = current_killer_portrait_path
+
+    def test_ui_setup(self):
+        # create all of the main containers
+        top_frame = tk.Frame(self, bg='cyan', width=450, height=50, pady=3)
+        center = tk.Frame(self, bg='gray2', width=50, height=40, padx=3, pady=3)
+        btm_frame = tk.Frame(self, bg='white', width=450, height=45, pady=3)
+        btm_frame2 = tk.Frame(self, bg='lavender', width=450, height=60, pady=3)
+
+        # layout all of the main containers
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        top_frame.grid(row=0, sticky="ew")
+        center.grid(row=1, sticky="nsew")
+        btm_frame.grid(row=3, sticky="ew")
+        btm_frame2.grid(row=4, sticky="ew")
+
+        # create the widgets for the top frame
+        model_label = Label(top_frame, text='Model Dimensions')
+        width_label = Label(top_frame, text='Width:')
+        length_label = Label(top_frame, text='Length:')
+        entry_W = tk.Entry(top_frame, background="pink")
+        entry_L = tk.Entry(top_frame, background="orange")
+
+        # layout the widgets in the top frame
+        model_label.grid(row=0, columnspan=3)
+        width_label.grid(row=1, column=0)
+        length_label.grid(row=1, column=2)
+        entry_W.grid(row=1, column=1)
+        entry_L.grid(row=1, column=3)
+
+        # create the center widgets
+        center.grid_rowconfigure(0, weight=1)
+        center.grid_columnconfigure(1, weight=1)
+
+        ctr_left = tk.Frame(center, bg='blue', width=100, height=190)
+        ctr_mid = tk.Frame(center, bg='yellow', width=250, height=190, padx=3, pady=3)
+        ctr_right = tk.Frame(center, bg='green', width=100, height=190, padx=3, pady=3)
+
+        ctr_left.grid(row=0, column=0, sticky="ns")
+        ctr_mid.grid(row=0, column=1, sticky="nsew")
+        ctr_right.grid(row=0, column=2, sticky="ns")
+
+    def resizer(self, event):
+        # if hasattr(self, 'text'):
+        #     self.text.config(width=event.width, height=event.height)
+        print((event.width, event.height))
+
+    def process_sniffed_data(self):
+        global current_killer_portrait_path
+
+        while self.queue.qsize():
+            try:
+                # self.text.delete(1.0, 'end')
+                if hasattr(self, 'text'):
+                    queued_string = self.queue.get()
+
+                    if "Detected Perk" in queued_string:
+                        self.perk_list.insert('end', queued_string)
+                        self.perk_list.see(tk.END)
+
+                    if "Detected Map: " in queued_string:
+                        self.map_label.config(text=queued_string.split("Detected Map: ")[-1], width=100)
+                        self.map_label.update_idletasks()
+
+                    self.text.insert('end', queued_string)
+                    self.text.see(tk.END)
+            except queue.Empty:
+                pass
+
+        if current_killer_portrait_path != last_current_killer_portrait_path:
+            self.set_killer_portrait(current_killer_portrait_path)
+
+        self.after(100, self.process_sniffed_data)
+
+    def on_closing(self):
+        global sniffer_thread_quit
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            sniffer_thread_quit = True
+            self.destroy()
 
 
 # ROOT = Tk("DbD Network Sniffer", "DbD Network Sniffer", "DbD Network Sniffer")
-# APP = App(ROOT)
+app = App()
+app.mainloop()
 # ROOT.mainloop()
-startSniffer()
+# startSniffer()
