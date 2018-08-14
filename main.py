@@ -84,6 +84,7 @@ killers = {
     Killer.Wraith: ['tw_head', 'wr_body', 'wr_head', 'wraith_body', 'wraith_body', 'bob_outfit'],
 }
 
+# TODO: Make this a dictionary with pretty prints
 killer_perks = [
     'agitation',
     'bbqandchili',
@@ -125,6 +126,7 @@ killer_perks = [
     'tenacity'
 ]
 
+# TODO: Make each inner part of the list contain a pretty print version with info
 killer_addons = {
     Killer.Clown: ['bottleofcholororm', 'cheapginbottle', 'cigarbox', 'ether5', 'ether10', 'ether15', 'fingerlessparadegloves', 'flaskofbleach',
               'garishmakeupkit', 'kerosenecan', 'redheadspinkyfinger', 'robinfeather', 'smellyinnersoles', 'solventjug', 'starlingfeather',
@@ -596,6 +598,7 @@ class App(tk.Tk):
                 if hasattr(self, 'text'):
                     queued_string = self.queue.get()
 
+                    # TODO: Make the perks a set queue so only the last 4 unique perks are shown
                     if "Detected Perk" in queued_string:
                         self.perk_list.insert('end', queued_string)
                         self.perk_list.see(tk.END)
@@ -629,8 +632,5 @@ class App(tk.Tk):
             self.destroy()
 
 
-# ROOT = Tk("DbD Network Sniffer", "DbD Network Sniffer", "DbD Network Sniffer")
 app = App()
 app.mainloop()
-# ROOT.mainloop()
-# startSniffer()
