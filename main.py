@@ -39,6 +39,22 @@ packet_log = []
 last_packet = ""
 substring_list = ('_leg', 'game', '_torso', '_head', 'item_', 'blueprint', 'map')
 
+
+class Killer:
+    Huntress = "Huntress"
+    Cannibal = "Cannibal"
+    Hillbilly = "Hillbilly"
+    Doctor = "Doctor"
+    Pig = "Pig"
+    Clown = "Clown"
+    Hag = "Hag"
+    MM = "Michael Myers"
+    Nurse = "Nurse"
+    SD = "Freddy Kreuger"
+    Trapper = "Trapper"
+    Wraith = "Wraith"
+
+
 survivors = {
     "Ace Visconti": ['av_head0', 'av_legs', 'av_torso'],
     "Bill Overbeck": ['bo_head0, bo_legs0', 'bo_torso0'],
@@ -54,18 +70,18 @@ survivors = {
 }
 
 killers = {
-    "Huntress": ['be_body', 'be_mask', 'be_w0', 'bear_outfit'],
-    "Cannibal": ['ca_body', 'ca_head0'],
-    "Hillbilly": ['crooked_body', 'crooked_legs', 'hb_legs', 'hb_torso', 'tc_body', 'tc_w0', 'hillbilly_'],
-    "Doctor": ['do_body', 'do_head', 'do_torso', 'killer07_', 'chuckles_', 'dow0', 'do_w0', 'do_weapon'],
-    "Pig": ['fk_body', 'fk_mask', 'fk_w0'],
-    "Clown": ['gk_body', 'gk_head', 'gk_w0'],
-    "Hag": ['ha_body', 'ha_claw', 'ha_head', 'wi_body', 'witch_outfit', 'wi_hair', 'wi_w0'],
-    "Michael Myers": ['mm_head0'],
-    "Nurse": ['nr_body', 'nr_head', 'nurse_body', 'nurse_head', 'nurse_weapon', 'nurse_outfit', 'smile', 'tn_body', 'tn_head', 'tn_w0'],
-    "Freddy Kreuger": ['sd_body', 'sd_head', 'sd_w0'],
-    "Trapper": ['tr_body', 'tr_head', 'trapper_body', 'trapper_head', 'trw0', 'tr_mask', 's01_body', 's01_head', 's01_weapon'],
-    "Wraith": ['tw_head', 'wr_body', 'wr_head', 'wraith_body', 'wraith_body', 'bob_outfit'],
+    Killer.Huntress: ['be_body', 'be_mask', 'be_w0', 'bear_outfit'],
+    Killer.Cannibal: ['ca_body', 'ca_head0'],
+    Killer.Hillbilly: ['crooked_body', 'crooked_legs', 'hb_legs', 'hb_torso', 'tc_body', 'tc_w0', 'hillbilly_'],
+    Killer.Doctor: ['do_body', 'do_head', 'do_torso', 'killer07_', 'chuckles_', 'dow0', 'do_w0', 'do_weapon'],
+    Killer.Pig: ['fk_body', 'fk_mask', 'fk_w0'],
+    Killer.Clown: ['gk_body', 'gk_head', 'gk_w0'],
+    Killer.Hag: ['ha_body', 'ha_claw', 'ha_head', 'wi_body', 'witch_outfit', 'wi_hair', 'wi_w0'],
+    Killer.MM: ['mm_head0'],
+    Killer.Nurse: ['nr_body', 'nr_head', 'nurse_body', 'nurse_head', 'nurse_weapon', 'nurse_outfit', 'smile', 'tn_body', 'tn_head', 'tn_w0'],
+    Killer.SD: ['sd_body', 'sd_head', 'sd_w0'],
+    Killer.Trapper: ['tr_body', 'tr_head', 'trapper_body', 'trapper_head', 'trw0', 'tr_mask', 's01_body', 's01_head', 's01_weapon'],
+    Killer.Wraith: ['tw_head', 'wr_body', 'wr_head', 'wraith_body', 'wraith_body', 'bob_outfit'],
 }
 
 killer_perks = [
@@ -110,59 +126,59 @@ killer_perks = [
 ]
 
 killer_addons = {
-    "Clown": ['bottleofcholororm', 'cheapginbottle', 'cigarbox', 'ether5', 'ether10', 'ether15', 'fingerlessparadegloves', 'flaskofbleach',
+    Killer.Clown: ['bottleofcholororm', 'cheapginbottle', 'cigarbox', 'ether5', 'ether10', 'ether15', 'fingerlessparadegloves', 'flaskofbleach',
               'garishmakeupkit', 'kerosenecan', 'redheadspinkyfinger', 'robinfeather', 'smellyinnersoles', 'solventjug', 'starlingfeather',
               'stickysodabottle', 'sulfuricacidvial', 'tattoosmiddlefinger', 'thickcorkstopper', 'vhsporn',
               ],
-    "Nurse": ['badmankeepsake', 'badmanslastbreath', 'campbellslastbreath', 'catatonictreasure', 'darkcincture',
+    Killer.Nurse: ['badmankeepsake', 'badmanslastbreath', 'campbellslastbreath', 'catatonictreasure', 'darkcincture',
               'dullbracelet', 'fragilewheeze', 'ataxicrespiration', 'anxiousgasp', 'heavypanting', 'jennerslastbreath', 'kavanaghslastbreath',
               'matchbox', 'metalspoon', 'plaidflannel', 'pocketwatch', 'spasmodicbreath', 'tornbookmark', 'whitenitcomb', 'woodenhorse'
               ],
 
-    "Wraith": ['bloodblindwarrior', 'bloodblink', 'krafabai', 'windstorm', 'boneclapper', 'coxcombedclapper', 'mudallseeing',
+    Killer.Wraith: ['bloodblindwarrior', 'bloodblink', 'krafabai', 'windstorm', 'boneclapper', 'coxcombedclapper', 'mudallseeing',
                'mudbaikrakaeug', 'mudkrafabai', 'mudswifthunt', 'mudwindstorm', 'sootbaikrakaeug', 'sootkratin',
                'sootkuntintakkho', 'spiritallseeing', 'spiritblindwarrior', 'whiteallseeing', 'whiteblindwarrior', 'whitekuntintakkho'
                'whitetheghost', 'whitewindstorm'
                ],
 
-    "Trapper": ['bloodycoil', 'diamondstone', 'honingstone', 'logwooddye', 'oilycoil', 'paddedjaws', 'rustedjaws',
+    Killer.Trapper: ['bloodycoil', 'diamondstone', 'honingstone', 'logwooddye', 'oilycoil', 'paddedjaws', 'rustedjaws',
                 'secondarycoil', 'serratedjaws', 'settingtools', 'stitchedbag', 'tapsetters', 'trapsetters',
                 'tarbottle', 'trapperbag', 'trappergloves', 'trappersack', 'waxbrick'
                 ],
 
-    "Cannibal/Leatherface": ['carburetortuningguide', 'chainsawfile', 'chainsbloody', 'chainsgrisly', 'chainsrusted', 'depthgaugerake',
+    Killer.Cannibal: ['carburetortuningguide', 'chainsawfile', 'chainsbloody', 'chainsgrisly', 'chainsrusted', 'depthgaugerake',
                              'homemademuffler', 'lightchassis', 'longguidebar', 'primerbulb', 'shoplubricant', 'sparkplug', 'speedlimiter',
                              'vegetableoil', 'awardwinningchili', 'chili', 'knifescratches', 'thebeastsmark', 'thegrease'
                              ],
 
-    "Hillbilly": ['deathengravings', 'doomengravings', 'spikedboots', 'thethompsonsmix', 'thompsonsmoonshine', 'primerbulb'],
+    Killer.Hillbilly: ['deathengravings', 'doomengravings', 'spikedboots', 'thethompsonsmix', 'thompsonsmoonshine', 'primerbulb'],
 
-    "Michael Myers": ['blondehair', 'boyfriendsmemo', 'deadrabbit', 'glassfragment', 'hairbow', 'hairbrush', 'jewelry',
+    Killer.MM: ['blondehair', 'boyfriendsmemo', 'deadrabbit', 'glassfragment', 'hairbow', 'hairbrush', 'jewelry',
                        'jewelerybox', 'jmyersmemorial', 'judithsjournal', 'judithstombstone', 'lockofhair', 'memorialflower',
                        'mirrorshard', 'reflectivefragment', 'scratchedmirror', 'tackyearrings', 'tombstonepiece', 'tuftofhair', 'vanitymirror'
                        ],
 
-    "Hag": ['bloodiedmud', 'bloddiedwater', 'bogwater', 'crackedturtleegg', 'cypressnecklet', 'deadflymud', 'disfiguredear', 'dragonflywings',
+    Killer.Hag: ['bloodiedmud', 'bloddiedwater', 'bogwater', 'crackedturtleegg', 'cypressnecklet', 'deadflymud', 'disfiguredear', 'dragonflywings',
             'driedcicada', 'granmasheart', 'halfeggshell', 'mintrag', 'powderedeggshell', 'pussywillowcatkins', 'ropenecklet', 'rustyshackles',
             'scarredhand', 'swamporchidnecklace', 'waterloggedshoe', 'willowwreath'
             ],
 
-    "Doctor": ['calmcartersnotes', 'calmclass', 'diciplinecartersnotes', 'diciplineclass', 'diciplineclass', 'highstimuluselectrode', 'interviewtape',
+    Killer.Doctor: ['calmcartersnotes', 'calmclass', 'diciplinecartersnotes', 'diciplineclass', 'diciplineclass', 'highstimuluselectrode', 'interviewtape',
                'iridescentking', 'mapleknight', 'moldyelectrode', 'obediencecartersnotes', 'ordercartersnotes', 'orderclass', 'polishedelectrode',
                'restraintcartersnotes', 'restraintclass', 'scrappedtape', 'cartersnotes'
                ],
 
-    "Huntress": ['amanitatoxin', 'bandagedhaft', 'begrimedhead', 'berustoxin', 'coarsestone', 'deerskingloves', 'finestone', 'flowbabushka',
+    Killer.Huntress: ['amanitatoxin', 'bandagedhaft', 'begrimedhead', 'berustoxin', 'coarsestone', 'deerskingloves', 'finestone', 'flowbabushka',
                  'glowingconcoction', 'infantrybelt', 'iridescenthead', 'leatherloop', 'mannagrassbraid', 'oakhaft', 'pungentfiale', 'rustyhead',
                  'shinypin', 'venomousconcoction', 'yewseedbrew', 'yewseedconcoction',
                  ],
 
-    "Freddy Kreguer": ['blackbox', 'bluedress', 'catblock', 'classphoto', 'gardenrake', 'greendress', 'jumprope', 'kidsdrawing',
+    Killer.SD: ['blackbox', 'bluedress', 'catblock', 'classphoto', 'gardenrake', 'greendress', 'jumprope', 'kidsdrawing',
                        'nancysmasterpiece', 'nancyssketch', 'outdoorrope', 'paintthinner', 'pillbottle', 'prototypeclaw', 'redpaintbrush', 'sheepblock',
                        'swingchains', 'unicornblock', 'woolshirt', 'zblock'
                        ],
 
-    "Pig": ['amandasletter', 'amandassecret', 'bagofgears', 'combatstraps', 'crateofgears', 'facemask', 'interlockingrazor', 'jigsawannotagedplan',
+    Killer.Pig: ['amandasletter', 'amandassecret', 'bagofgears', 'combatstraps', 'crateofgears', 'facemask', 'interlockingrazor', 'jigsawannotagedplan',
             'jigsawsketch', 'johnsmedicalfile', 'lastwill', 'razerwire', 'rulessetn2', 'rustyattachments', 'shatteredsyringe', 'slowreleasetoxin',
             'tamperedtimer', 'utilityblades', 'videotape', 'workshopgrease',
             ]
@@ -492,7 +508,7 @@ class App(tk.Tk):
         self.set_killer_portrait(get_temp_image_path())
 
         # Make map label
-        self.map_label = tk.Label(self, text="Current Map: ")
+        self.map_label = tk.Label(self, text="Current Map: N/A")
         self.map_label.grid(row=3, columnspan=3, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
 
         # Make perks list
