@@ -20,6 +20,7 @@ perk_queue = queue.Queue()
 sniffer_thread_quit = False
 current_killer_portrait_path = ""
 last_current_killer_portrait_path = ""
+clear_portrait_and_perks_list = False
 
 os_platform = platform.system()
 
@@ -318,13 +319,17 @@ def check_map(packet_str):
     return map_detected
 
 
+def detect_lobby_finished(packet_str):
+    return "\\xbe\\xef\\xfa\\xce" in packet_str
+
+
 def output_to_file(s, packet_str):
     output_file.write("{}\n\t{}\n".format(s, packet_str))
     output_file.flush()
 
 
 def handle_packet(packet_str):
-    global current_killer_portrait_path
+    global current_killer_portrait_path, clear_portrait_and_perks_list
 
     try:
         killer_detected = check_for_killer(packet_str=packet_str)
@@ -341,8 +346,15 @@ def handle_packet(packet_str):
 
         map_detected = check_map(packet_str=packet_str)
 
+        out_of_lobby_or_match_finished = detect_lobby_finished(packet_str=packet_str)
+
         if killer_detected:
             current_killer_portrait_path = get_killer_portrait_path(killer_detected)
+
+        if out_of_lobby_or_match_finished:
+            clear_portrait_and_perks_list = True
+            queue_print("Left Lobby/Match")
+
     except Exception as ex:
         print(ex)
 
@@ -556,10 +568,11 @@ class App(tk.Tk):
     def resizer(self, event):
         # if hasattr(self, 'text'):
         #     self.text.config(width=event.width, height=event.height)
-        print((event.width, event.height))
+        # print((event.width, event.height))
+        pass
 
     def process_sniffed_data(self):
-        global current_killer_portrait_path
+        global current_killer_portrait_path, clear_portrait_and_perks_list
 
         while self.queue.qsize():
             try:
@@ -572,8 +585,16 @@ class App(tk.Tk):
                         self.perk_list.see(tk.END)
 
                     if "Detected Map: " in queued_string:
-                        self.map_label.config(text=queued_string.split("Detected Map: ")[-1], width=100)
+                        self.map_label.config(text="Current Map: " + queued_string.split("Detected Map: ")[-1], width=100)
                         self.map_label.update_idletasks()
+
+                    if clear_portrait_and_perks_list:
+                        clear_portrait_and_perks_list = False
+                        self.map_label.config(text="Current Map: N/A")
+                        self.map_label.update_idletasks()
+                        self.perk_list.delete('1.0', tk.END)
+                        self.set_killer_portrait(get_temp_image_path())
+                        queue_print("-" * 50)
 
                     self.text.insert('end', queued_string)
                     self.text.see(tk.END)
