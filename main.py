@@ -12,11 +12,11 @@ import threading
 import sys
 import re
 import string
-import configuration as config
 import socket
 from requests import get
 import time
 import geoip2.database
+from Utilities import utilities, configuration as config
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -27,6 +27,7 @@ sniffer_thread_quit = False
 current_killer_portrait_path = ""
 last_current_killer_portrait_path = ""
 clear_portrait_and_perks_list = False
+paused = False
 
 os_platform = platform.system()
 
@@ -35,9 +36,11 @@ output_file = open('output.txt', 'w+')
 if os_platform == "Darwin":
     interfaces = [{"name": "en0"}]
 elif "win" in os_platform.lower():
-    interfaces = [i for i in scapy.arch.get_windows_if_list() if 'vmware' not in i['name'].lower()]
+    interfaces = [i for i in scapy.arch.get_windows_if_list() if 'vmware' not in i['name'].lower() and 'NordVPN' not in i['name']]
 else:
     interfaces = [{"name": "eth0"}]
+
+utilities.load_json('killer.json', pretty_write=True)
 
 
 def get_local_ip_address():
@@ -176,7 +179,7 @@ killer_addons = {
                              'vegetableoil', 'awardwinningchili', 'chili', 'knifescratches', 'thebeastsmark', 'thegrease'
                              ],
 
-    Killer.Hillbilly: ['deathengravings', 'doomengravings', 'spikedboots', 'thethompsonsmix', 'thompsonsmoonshine', 'primerbulb'],
+    Killer.Hillbilly: ['deathengravings', 'doomengravings', 'spikedboots', 'thethompsonsmix', 'thompsonsmoonshine', 'primerbulb', 'addon_chainsaw_010'],
 
     Killer.MM: ['blondehair', 'boyfriendsmemo', 'deadrabbit', 'glassfragment', 'hairbow', 'hairbrush', 'jewelry',
                        'jewelerybox', 'jmyersmemorial', 'judithsjournal', 'judithstombstone', 'lockofhair', 'memorialflower',
@@ -214,7 +217,10 @@ game_maps = {
     "Asylum": ['blueprints/props/04-asylum/bp_asy_'],
     "Red Forest": ['blueprints/props/08-boreal'],
     'Junkyard': ['blueprints/props/02-junkyard'],
-    "Swamp": ['blueprints/props/06-swamp']
+    "Swamp": ['blueprints/props/06-swamp'],
+    "MacMillan Estate": ['blueprints/props/walls/bp_wallarrangement04_in'],
+    "Slaughterhouse": ['blueprints/gameplayelements/worldobjects/windowblockers/bp_boardedwindow_slaughter1'],
+    "Coldwind Farm": ['blueprints/props/walls/bp_farm_wall01']
 }
 
 start_ordinal_lower = 0x05
@@ -304,6 +310,15 @@ def check_for_blueprints(packet_str):
                 output_to_file("Found blueprint: {}".format(bp_string), packet_str)
 
         return True
+
+    character_list = [m.start() for m in re.finditer('characters', packet_str)]
+
+    if len(character_list) > 0:
+        for cl in character_list:
+            cl_string = packet_str[cl:].split('\\x')[0]
+            queue_print("Character Data Found: " + cl_string)
+            output_to_file("Character Data Found: " + cl_string, packet_str)
+
     return False
 
 
@@ -358,6 +373,14 @@ def check_map(packet_str):
             map_detected = True
             queue_print("Detected Map: {}".format(game_map))
 
+    map_list = [m.start() for m in re.finditer('/map', packet_str)]
+
+    if len(map_list) > 0:
+        for ml in map_list:
+            ml_string = packet_str[ml:].split('\\x')[0]
+            queue_print("Detected Map Component?: {}".format(ml_string))
+            output_to_file("Detected Map Component?: {}".format(ml_string), packet_str)
+
     return map_detected
 
 
@@ -365,7 +388,7 @@ def get_killer_geoip():
     reader = geoip2.database.Reader('GeoLite2-City.mmdb')
     response = reader.city(killer_ip)
 
-    return "({city}, {state}, {country})".format(
+    return "{city}, {state}, {country}".format(
         city=response.city.name,
         state=response.subdivisions.most_specific.name,
         country=response.country.name
@@ -377,7 +400,7 @@ def detect_lobby_finished(packet_str):
 
 
 def output_to_file(s, packet_str):
-    output_file.write("{}\n\t{}\n".format(s, packet_str))
+    # output_file.write("{}\n\t{}\n".format(s, packet_str))
     output_file.flush()
 
 
@@ -391,9 +414,9 @@ def handle_packet(packet_str):
 
         killer_addon_detected = check_for_killer_addons(packet_str=packet_str)
 
-        killer_perk_detected = check_for_killer_perk(packet_str=packet_str)
+        # killer_perk_detected = check_for_killer_perk(packet_str=packet_str)
 
-        survivor_perk_detected = check_for_survivor_perk(packet_str=packet_str)
+        # survivor_perk_detected = check_for_survivor_perk(packet_str=packet_str)
 
         extra_detected = check_for_blueprints(packet_str=packet_str)
 
@@ -449,14 +472,43 @@ class Sniffer(Thread):
     def should_stop_sniffer(self, packet):
         return self.stop_sniffer.isSet()
 
-    def print_packet(self, packet):
-        global last_packet, killer_ip, last_killer_ip_time, killer_ping
+    def check_for_stun_packet(self, packet):
+        global last_killer_ip_time, killer_ip, killer_ping
 
         ip_layer = packet.getlayer(IP)
         ip_dest = ip_layer.dst
         ip_src = ip_layer.src
 
-        # packet_log.append(packet)
+        packet_is_stun_packet = False
+
+        if len(packet[UDP].payload) == 56:
+            packet_is_stun_packet = True
+            last_killer_ip_time = current_milli_time()
+        elif len(packet[UDP].payload) == 68:
+            packet_is_stun_packet = True
+            # Determine ping to killer
+            current_time = current_milli_time()
+            current_killer_ping = current_time - last_killer_ip_time
+            if current_killer_ping > 10:
+                # print("Killer ping: {}".format(killer_ping))
+                killer_ping = current_killer_ping
+
+        if packet_is_stun_packet:
+            # Handle showing IP found from STUN protocol
+            if ip_dest == localhost_ip:
+                killer_ip = str(ip_src)
+            else:
+                killer_ip = str(ip_dest)
+            return True
+        return False
+
+    def print_packet(self, packet):
+        global paused
+
+        if paused:
+            return
+
+        ip_layer = packet.getlayer(IP)
 
         # for p in packet_log:
         if UDP in packet:
@@ -466,31 +518,11 @@ class Sniffer(Thread):
             port_min = 40000
             port_max = 65535
 
+            self.check_for_stun_packet(packet)
+
             if port_max > dport > port_min or port_max > sport > port_min:
                 packet_str = str(packet).lower()
-
-                if len(packet[UDP].payload) == 56:
-                    # Handle showing IP found from STUN protocol
-                    if ip_dest == localhost_ip:
-                        killer_ip = str(ip_src)
-                    else:
-                        killer_ip = str(ip_dest)
-                    last_killer_ip_time = current_milli_time()
-                elif len(packet[UDP].payload) == 68:
-                    # Handle showing IP found from STUN protocol
-                    if ip_dest == localhost_ip:
-                        killer_ip = str(ip_src)
-                    else:
-                        killer_ip = str(ip_dest)
-
-                    # Determine ping to killer
-                    current_time = current_milli_time()
-                    current_killer_ping = current_time - last_killer_ip_time
-                    if current_killer_ping > 10:
-                        print("Killer ping: {}".format(killer_ping))
-                        killer_ping = current_killer_ping
-                else:
-                    handle_packet(packet_str)
+                handle_packet(packet_str)
 
 
 def start_sniffer():
@@ -574,7 +606,7 @@ class App(tk.Tk):
 
         # Make map label
         self.map_label = tk.Label(self, text="Current Map: N/A")
-        self.map_label.grid(row=3, columnspan=1, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
+        self.map_label.grid(row=3, column=0, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
 
         # Show killer IP
         self.killer_ip_label = tk.Label(self, textvariable=self.killer_ip)
@@ -583,6 +615,12 @@ class App(tk.Tk):
         self.killer_geo_label = tk.Label(self, textvariable=self.killer_geolocation)
         self.killer_geo_label.grid(row=4, column=1, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
 
+        # Add pause button
+        self.pause_button_text = tk.StringVar()
+        self.pause_button = tk.Button(self, textvariable=self.pause_button_text, command=self.pause_action)
+        self.pause_button.grid(row=4, column=0, padx=self.default_padx, pady=self.default_pady, sticky=tk.W)
+        self.pause_button_text.set("Pause")
+
         # Make perks list
         self.perk_list_frame = tk.Frame(self, height=130, width=self.default_image_size[1])
         self.perk_list_frame.grid(row=1, column=1)
@@ -590,6 +628,18 @@ class App(tk.Tk):
 
         self.perk_list = tk.Text(self.perk_list_frame, font='arial 10')
         self.perk_list.grid(sticky=tk.E+tk.W)
+
+    def pause_action(self):
+        global paused
+
+        paused = not paused
+
+        if paused:
+            print("Pausing!")
+            self.pause_button_text.set("Unpause")
+        else:
+            print("Unpausing!")
+            self.pause_button_text.set("Pause")
 
     def set_killer_portrait(self, image_path):
         global last_current_killer_portrait_path
@@ -612,8 +662,6 @@ class App(tk.Tk):
         last_current_killer_portrait_path = current_killer_portrait_path
 
     def resizer(self, event):
-        # if hasattr(self, 'text'):
-        #     self.text.config(width=event.width, height=event.height)
         # print((event.width, event.height))
         pass
 
@@ -632,7 +680,7 @@ class App(tk.Tk):
                         self.perk_list.see(tk.END)
 
                     if "Detected Map: " in queued_string:
-                        self.map_label.config(text="Current Map: " + queued_string.split("Detected Map: ")[-1], width=100)
+                        self.map_label.config(text="Current Map: " + queued_string.split("Detected Map: ")[-1].rstrip())
                         self.map_label.update_idletasks()
 
                     if clear_portrait_and_perks_list:
@@ -656,11 +704,14 @@ class App(tk.Tk):
         if last_killer_ip != killer_ip:
             last_killer_ip = killer_ip
             if killer_ip != "Not Connected":
-                killer_geolocation = get_killer_geoip()
+                try:
+                    killer_geolocation = get_killer_geoip()
+                except Exception:
+                    killer_geolocation = "Could not determine location"
             else:
                 killer_geolocation = "N/A"
             self.killer_geolocation.set(killer_geolocation)
-            self.killer_ip.set("Killer IP: {} - {}".format(killer_ip, killer_ping))
+        self.killer_ip.set("Killer IP: {} - {}".format(killer_ip, killer_ping))
 
         self.after(100, self.process_sniffed_data)
 

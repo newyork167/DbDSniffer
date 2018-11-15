@@ -5,3 +5,6 @@ __pycache__/
 Downloads/*
 *.log
 output*.txt
+build/
+dist/
+*.spec
