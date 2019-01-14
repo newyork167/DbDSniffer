@@ -15,7 +15,7 @@ class Perks:
         if len(k_perks) > 0:
             for k_perk_pos in k_perks:
                 killer_perk_string = packet_str[k_perk_pos:].split('\\x')[0]
-                QueuedOutput().queue_print("Found killer perk - " + killer_perk_string)
+                QueuedOutput.instance().queue_print("Found killer perk - " + killer_perk_string)
                 utilities.output_to_file("Found killer perk: {}".format(killer_perk_string), packet_str)
             return True
         return False
@@ -27,7 +27,7 @@ class Perks:
         if len(k_perks) > 0:
             for k_perk_pos in k_perks:
                 survivor_perk_string = packet_str[k_perk_pos:].split('\\x')[0]
-                QueuedOutput().queue_print("Found survivor perk - " + survivor_perk_string)
+                QueuedOutput.instance().queue_print("Found survivor perk - " + survivor_perk_string)
                 utilities.output_to_file("Found surivor perk: {}".format(survivor_perk_string), packet_str)
             return True
         return False
@@ -39,7 +39,7 @@ class Perks:
         for perk in Killer.instance().killer_perks:
             if perk in packet_str:
                 perk_detected = True
-                QueuedOutput().queue_print("Detected Perk: {}".format(perk))
+                QueuedOutput.instance().queue_print("Detected Perk: {}".format(perk))
                 utilities.output_to_file("Detected Perk: {}".format(perk), packet_str)
 
         return perk_detected

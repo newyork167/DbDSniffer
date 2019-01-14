@@ -20,13 +20,13 @@ class Maps:
         for game_map in self.game_maps:
             if any(gm in packet_str for gm in self.game_maps[game_map]):
                 map_detected = True
-                QueuedOutput().queue_print("Detected Map: {}".format(game_map))
+                QueuedOutput.instance().queue_print("Detected Map: {}".format(game_map))
 
         map_list = [m.start() for m in re.finditer('/map', packet_str)]
 
         if len(map_list) > 0:
             for ml in map_list:
                 ml_string = packet_str[ml:].split('\\x')[0]
-                QueuedOutput().queue_print("Detected Map Component?: {}".format(ml_string))
+                QueuedOutput.instance().queue_print("Detected Map Component?: {}".format(ml_string))
 
         return map_detected

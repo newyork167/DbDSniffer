@@ -20,9 +20,9 @@ class UE4:
                 # if all(check_str not in packet_str for check_str in ['statuseffects', 'survivorperks', 'killerperks', 'gameplayelements']):
                 if 'statuseffects' not in bp_string and 'perkconditions' not in bp_string and 'survivorperks' not in bp_string and 'killerperks' not in bp_string:
                     if 'itemaddons' in bp_string:
-                        QueuedOutput().queue_print('\tFound addon: {}'.format(bp_string))
+                        QueuedOutput.instance().queue_print('\tFound addon: {}'.format(bp_string))
                     else:
-                        QueuedOutput().queue_print("\t\t - " + bp_string)
+                        QueuedOutput.instance().queue_print("\t\t - " + bp_string)
 
             return True
 
@@ -31,7 +31,7 @@ class UE4:
         if len(character_list) > 0:
             for cl in character_list:
                 cl_string = packet_str[cl:].split('\\x')[0]
-                QueuedOutput().queue_print("Character Data Found: " + cl_string)
+                QueuedOutput.instance().queue_print("Character Data Found: " + cl_string)
 
         return False
 

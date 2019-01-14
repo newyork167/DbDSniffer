@@ -10,5 +10,7 @@
     "Nurse": ["nr_body", "nr_head", "nurse_body", "nurse_head", "nurse_weapon", "nurse_outfit", "smile", "tn_body", "tn_head", "tn_w0"],
     "SD": ["sd_body", "sd_head", "sd_w0"],
     "Trapper": ["tr_body", "tr_head", "trapper_body", "trapper_head", "trw0", "tr_mask", "s01_body", "s01_head", "s01_weapon"],
-    "Wraith": ["tw_head", "wr_body", "wr_head", "wraith_body", "wraith_body", "bob_outfit"]
+    "Wraith": ["tw_head", "wr_body", "wr_head", "wraith_body", "wraith_body", "bob_outfit"],
+    "Spirit": ["hk_head", "hk_body", "hk_w0"],
+    "Legion": ["kk_head", "kk_w0", "kk_mask", "kk_body"]
 }

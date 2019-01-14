@@ -36,7 +36,7 @@ class Sniffer(Thread):
         super().__init__()
 
         if c_queue is None:
-            c_queue = QueuedOutput().console_queue
+            c_queue = QueuedOutput.instance().console_queue
 
         self.daemon = True
         self.queue = c_queue
@@ -94,10 +94,6 @@ class Sniffer(Thread):
         return False
 
     def print_packet(self, packet):
-        with open(config.get('output', 'output_file'), 'a') as output_file:
-            output_file.write(str(packet))
-            output_file.write("\n")
-
         if self.paused:
             return
 
@@ -107,6 +103,8 @@ class Sniffer(Thread):
                 ip_layer = packet.getlayer(IP)
                 dport = ip_layer.payload.dport
                 sport = ip_layer.payload.sport
+
+                QueuedOutput.instance().output_to_file(packet)
 
                 port_min = 40000
                 port_max = 65535
@@ -145,7 +143,7 @@ class Sniffer(Thread):
 
             if out_of_lobby_or_match_finished and ThreadedVars.instance().clear_portrait_and_perks_list is False:
                 ThreadedVars.instance().clear_portrait_and_perks_list = True
-                QueuedOutput().queue_print("Left Lobby/Match")
+                QueuedOutput.instance().queue_print("Left Lobby/Match")
 
         except Exception as ex:
             print("Handle Packet: {}".format(ex))

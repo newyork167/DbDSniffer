@@ -18,7 +18,7 @@ class SerialThread(threading.Thread):
     def start_sniffer(self):
         sniffer = Sniffer.Sniffer()
 
-        QueuedOutput().queue_print("[*] Start sniffing...")
+        QueuedOutput.instance().queue_print("[*] Start sniffing...")
         sniffer.start()
         sniffer.run()
 
@@ -28,7 +28,7 @@ class SerialThread(threading.Thread):
                     raise KeyboardInterrupt()
                 time.sleep(2)
         except KeyboardInterrupt:
-            QueuedOutput().queue_print("[*] Stop sniffing")
+            QueuedOutput.instance().queue_print("[*] Stop sniffing")
             sniffer.join(2.0)
 
             utilities.output_file.close()

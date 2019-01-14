@@ -1,6 +1,8 @@
 import geoip2.database
 from requests import get
 from scapy.all import *
+
+from DBDSniffer import QueuedOutput
 from DBDSniffer.Singleton import Singleton
 
 
@@ -34,7 +36,7 @@ class Network:
         s.connect(("8.8.8.8", 80))
         local_ip = str(s.getsockname()[0])
 
-        print("Local IP detected as: {}".format(local_ip))
+        QueuedOutput.instance().queue_print("Local IP detected as: {}".format(local_ip))
 
         return local_ip
 

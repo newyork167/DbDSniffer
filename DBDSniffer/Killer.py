@@ -72,14 +72,14 @@ class Killer:
                 if addon in packet_str:
                     killer_addon_detected = True
                     ThreadedVars.instance().current_killer_portrait_path = self.get_killer_portrait_path(killer_addon)
-                    QueuedOutput().queue_print("Detected Addon ({}): {}".format(killer_addon, addon))
+                    QueuedOutput.instance().queue_print("Detected Addon ({}): {}".format(killer_addon, addon))
 
         return killer_addon_detected
 
     def check_for_killer(self, packet_str):
         for killer in self.get_killers():
             if any(substring in packet_str for substring in self.killers[killer]):
-                QueuedOutput().queue_print("***Detected Killer***: {}".format(killer))
+                QueuedOutput.instance().queue_print("***Detected Killer***: {}".format(killer))
                 return killer
 
         return ""

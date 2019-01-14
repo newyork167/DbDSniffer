@@ -74,7 +74,7 @@ class App(tk.Tk):
         self.bind("<Configure>", self.resizer)
 
         # Start sniffer
-        self.queue = QueuedOutput().console_queue
+        self.queue = QueuedOutput.instance().console_queue
         self.thread = SerialThread.SerialThread(self.queue)
         self.thread.start()
         self.process_sniffed_data()
@@ -188,7 +188,7 @@ class App(tk.Tk):
                         self.set_killer_portrait(self.get_temp_image_path())
                         ThreadedVars.instance().killer_ip = "Not Connected"
                         ThreadedVars.instance().killer_ping = "N/A"
-                        QueuedOutput().queue_print("-" * 50)
+                        QueuedOutput.instance().queue_print("-" * 50)
 
                     self.text.insert('end', queued_string)
                     self.text.see(tk.END)
