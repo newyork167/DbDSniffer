@@ -34,3 +34,11 @@ class UE4:
                 QueuedOutput().queue_print("Character Data Found: " + cl_string)
 
         return False
+
+    def check_for_other(self, packet_str):
+        re_format = "name="
+
+        name_list = [m.start() for m in re.finditer(re_format, packet_str)]
+        if len(name_list) > 0:
+            for name in name_list:
+                print(name)

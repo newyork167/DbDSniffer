@@ -7,6 +7,8 @@ from DBDSniffer import Killer
 from DBDSniffer import Network
 from DBDSniffer import QueuedOutput
 from DBDSniffer import SerialThread
+from DBDSniffer import Sniffer
+from DBDSniffer.TkAppThreadedVars import ThreadedVars
 from Utilities.configuration import config
 
 
@@ -156,7 +158,7 @@ class App(tk.Tk):
             self.killer_portrait = tk.Label(self, image=self.temp_image)
             self.killer_portrait.grid(row=0, column=1, pady=(self.default_pady, 0), sticky=tk.N+tk.S+tk.E+tk.W)
 
-        self.last_current_killer_portrait_path = Killer().current_killer_portrait_path
+        ThreadedVars.instance().last_current_killer_portrait_path = Killer.instance().current_killer_portrait_path
 
     def resizer(self, event):
         # print((event.width, event.height))
@@ -178,14 +180,14 @@ class App(tk.Tk):
                         self.map_label.config(text="Current Map: " + queued_string.split("Detected Map: ")[-1].rstrip())
                         self.map_label.update_idletasks()
 
-                    if self.clear_portrait_and_perks_list:
-                        self.clear_portrait_and_perks_list = False
+                    if ThreadedVars.instance().clear_portrait_and_perks_list:
+                        ThreadedVars.instance().clear_portrait_and_perks_list = False
                         self.map_label.config(text="Current Map: N/A")
                         self.map_label.update_idletasks()
                         self.perk_list.delete('1.0', tk.END)
                         self.set_killer_portrait(self.get_temp_image_path())
-                        self.killer_ip = "Not Connected"
-                        self.killer_ping = "N/A"
+                        ThreadedVars.instance().killer_ip = "Not Connected"
+                        ThreadedVars.instance().killer_ping = "N/A"
                         QueuedOutput().queue_print("-" * 50)
 
                     self.text.insert('end', queued_string)
@@ -193,25 +195,24 @@ class App(tk.Tk):
             except queue.Empty:
                 pass
 
-        if self.current_killer_portrait_path != self.last_current_killer_portrait_path:
-            self.set_killer_portrait(self.current_killer_portrait_path)
+        if Killer.instance().current_killer_portrait_path != ThreadedVars.instance().last_current_killer_portrait_path:
+            self.set_killer_portrait(Killer.instance().current_killer_portrait_path)
 
-        if self.last_killer_ip != self.killer_ip:
-            self.last_killer_ip = self.killer_ip
+        if self.last_killer_ip != ThreadedVars.instance().killer_ip:
+            self.last_killer_ip = ThreadedVars.instance().killer_ip
             if self.killer_ip != "Not Connected":
                 try:
-                    killer_geolocation = Network().get_killer_geoip(self.killer_ip)
+                    killer_geolocation = Network.instance().get_killer_geoip(ThreadedVars.instance().killer_ip)
                 except Exception:
                     killer_geolocation = "Could not determine location"
             else:
                 killer_geolocation = "N/A"
             self.killer_geolocation_stringvar.set(killer_geolocation)
-        self.killer_ip_stringvar.set("Killer IP: {} - {}".format(self.killer_ip, self.killer_ping))
+        self.killer_ip_stringvar.set("Killer IP: {} - {}".format(ThreadedVars.instance().killer_ip, ThreadedVars.instance().killer_ping))
 
         self.after(100, self.process_sniffed_data)
 
     def on_closing(self):
-        global sniffer_thread_quit
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            sniffer_thread_quit = True
+            Sniffer.Sniffer().sniffer_thread_quit = True
             self.destroy()

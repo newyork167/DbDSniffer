@@ -36,7 +36,7 @@ class Perks:
     def check_for_perks(packet_str):
         perk_detected = False
 
-        for perk in Killer().killer_perks:
+        for perk in Killer.instance().killer_perks:
             if perk in packet_str:
                 perk_detected = True
                 QueuedOutput().queue_print("Detected Perk: {}".format(perk))

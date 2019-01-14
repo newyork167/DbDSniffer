@@ -4,27 +4,30 @@ import random
 import os
 
 from DBDSniffer.QueuedOutput import QueuedOutput
+from DBDSniffer.Singleton import Singleton
+from DBDSniffer.TkAppThreadedVars import ThreadedVars
 from Utilities import configuration as config
 from pathlib import Path
 
 
+class Bunch(object):
+    def __init__(self, adict):
+        self.__dict__.update(adict)
+
+
+@Singleton
 class Killer:
     killers = []
     killer_perks = []
     killer_addons = {}
-    __instance = None
 
     current_killer_portrait_path = ""
-
-    def __new__(cls):
-        if Killer.__instance is None:
-            Killer.__instance = object.__new__(cls)
-        return Killer.__instance
 
     def __init__(self):
         self.killers = self.get_killers()
         self.killer_perks = self.get_killer_perks()
         self.killer_addons = self.get_killer_addons()
+        locals().update(self.get_killer_vars())
 
     @staticmethod
     def get_random_killer_portrait():
@@ -32,12 +35,12 @@ class Killer:
 
     @staticmethod
     def get_killers():
-        killers = list(json.load(open(config.get('killer', 'killer_json'))).values())
+        killers = json.load(open(config.get('killer', 'killer_json')))
         return killers
 
     @staticmethod
     def get_killer_vars():
-        killers = list(json.load(open(config.get('killer', 'killer_vars_json'))).values())
+        killers = dict(json.load(open(config.get('killer', 'killer_vars_json'))))
         return killers
 
     @staticmethod
@@ -70,7 +73,7 @@ class Killer:
             for addon in self.killer_addons[killer_addon]:
                 if addon in packet_str:
                     killer_addon_detected = True
-                    current_killer_portrait_path = self.get_killer_portrait_path(killer_addon)
+                    ThreadedVars.instance().current_killer_portrait_path = self.get_killer_portrait_path(killer_addon)
                     QueuedOutput().queue_print("Detected Addon ({}): {}".format(killer_addon, addon))
 
         return killer_addon_detected
@@ -82,14 +85,3 @@ class Killer:
                 return killer
 
         return ""
-
-    def test_class(self):
-        import pprint as pp
-        pp.pprint(self.killer_perks)
-        pp.pprint(self.get_killer_addons())
-
-
-# Test Run
-if __name__ == '__main__':
-    killer = Killer()
-    killer.test_class()

@@ -1,18 +1,14 @@
 import geoip2.database
 from requests import get
 from scapy.all import *
+from DBDSniffer.Singleton import Singleton
 
 
+@Singleton
 class Network:
-    __instance = None
     interfaces = []
     local_ip_address = ""
     reader = geoip2.database.Reader('GeoLite2-City.mmdb')
-
-    def __new__(cls):
-        if Network.__instance is None:
-            Network.__instance = object.__new__(cls)
-        return Network.__instance
 
     def __init__(self):
         self.interfaces = self.get_interfaces()
