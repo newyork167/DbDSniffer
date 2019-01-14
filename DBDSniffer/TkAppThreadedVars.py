@@ -7,6 +7,7 @@ class ThreadedVars:
     killer_ip = ""
     killer_ping = -999
     killer_portrait = ""
+    current_killer_portrait_path = ""
     last_killer_portrait_path = ""
 
     def __init__(self):

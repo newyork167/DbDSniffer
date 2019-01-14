@@ -158,7 +158,7 @@ class App(tk.Tk):
             self.killer_portrait = tk.Label(self, image=self.temp_image)
             self.killer_portrait.grid(row=0, column=1, pady=(self.default_pady, 0), sticky=tk.N+tk.S+tk.E+tk.W)
 
-        ThreadedVars.instance().last_current_killer_portrait_path = Killer.instance().current_killer_portrait_path
+        ThreadedVars.instance().last_current_killer_portrait_path = ThreadedVars.instance().current_killer_portrait_path
 
     def resizer(self, event):
         # print((event.width, event.height))
@@ -195,8 +195,8 @@ class App(tk.Tk):
             except queue.Empty:
                 pass
 
-        if Killer.instance().current_killer_portrait_path != ThreadedVars.instance().last_current_killer_portrait_path:
-            self.set_killer_portrait(Killer.instance().current_killer_portrait_path)
+        if ThreadedVars.instance().current_killer_portrait_path != ThreadedVars.instance().last_current_killer_portrait_path:
+            self.set_killer_portrait(ThreadedVars.instance().current_killer_portrait_path)
 
         if self.last_killer_ip != ThreadedVars.instance().killer_ip:
             self.last_killer_ip = ThreadedVars.instance().killer_ip

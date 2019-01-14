@@ -21,8 +21,6 @@ class Killer:
     killer_perks = []
     killer_addons = {}
 
-    current_killer_portrait_path = ""
-
     def __init__(self):
         self.killers = self.get_killers()
         self.killer_perks = self.get_killer_perks()

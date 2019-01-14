@@ -141,7 +141,7 @@ class Sniffer(Thread):
             out_of_lobby_or_match_finished = Network.instance().detect_lobby_finished(packet_str=packet_str)
 
             if killer_detected:
-                current_killer_portrait_path = Killer.instance().get_killer_portrait_path(killer_detected)
+                ThreadedVars.instance().current_killer_portrait_path = Killer.instance().get_killer_portrait_path(killer_detected)
 
             if out_of_lobby_or_match_finished and ThreadedVars.instance().clear_portrait_and_perks_list is False:
                 ThreadedVars.instance().clear_portrait_and_perks_list = True
