@@ -21,6 +21,7 @@ def build_addons():
         killer = folder.split('\\')[-1]
         addons = get_addons_from_folder(folder)
         addons = [a.split('iconAddon_')[-1].split('.')[0] for a in addons]
+        addons = [a.lower() for a in addons]
         killer_addons[killer] = addons
 
     with open(config.get('killer', 'killer_addons_json'), 'w+') as json_output_file:
