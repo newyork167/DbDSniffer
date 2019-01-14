@@ -1,0 +1,58 @@
+{
+    "Clown": ["bottleofcholororm", "cheapginbottle", "cigarbox", "ether5", "ether10", "ether15", "fingerlessparadegloves", "flaskofbleach",
+              "garishmakeupkit", "kerosenecan", "redheadspinkyfinger", "robinfeather", "smellyinnersoles", "solventjug", "starlingfeather",
+              "stickysodabottle", "sulfuricacidvial", "tattoosmiddlefinger", "thickcorkstopper", "vhsporn"
+              ],
+    "Nurse": ["badmankeepsake", "badmanslastbreath", "campbellslastbreath", "catatonictreasure", "darkcincture",
+              "dullbracelet", "fragilewheeze", "ataxicrespiration", "anxiousgasp", "heavypanting", "jennerslastbreath", "kavanaghslastbreath",
+              "matchbox", "metalspoon", "plaidflannel", "pocketwatch", "spasmodicbreath", "tornbookmark", "whitenitcomb", "woodenhorse"
+              ],
+
+    "Wraith": ["bloodblindwarrior", "bloodblink", "krafabai", "windstorm", "boneclapper", "coxcombedclapper", "mudallseeing",
+               "mudbaikrakaeug", "mudkrafabai", "mudswifthunt", "mudwindstorm", "sootbaikrakaeug", "sootkratin",
+               "sootkuntintakkho", "spiritallseeing", "spiritblindwarrior", "whiteallseeing", "whiteblindwarrior", "whitekuntintakkho",
+               "whitetheghost", "whitewindstorm"
+               ],
+
+    "Trapper": ["bloodycoil", "diamondstone", "honingstone", "logwooddye", "oilycoil", "paddedjaws", "rustedjaws",
+                "secondarycoil", "serratedjaws", "settingtools", "stitchedbag", "tapsetters", "trapsetters",
+                "tarbottle", "trapperbag", "trappergloves", "trappersack", "waxbrick"
+                ],
+
+    "Cannibal": ["carburetortuningguide", "chainsawfile", "chainsbloody", "chainsgrisly", "chainsrusted", "depthgaugerake",
+                             "homemademuffler", "lightchassis", "longguidebar", "primerbulb", "shoplubricant", "sparkplug", "speedlimiter",
+                             "vegetableoil", "awardwinningchili", "chili", "knifescratches", "thebeastsmark", "thegrease"
+                             ],
+
+    "Hillbilly": ["deathengravings", "doomengravings", "spikedboots", "thethompsonsmix", "thompsonsmoonshine", "primerbulb", "addon_chainsaw_010"],
+
+    "MM": ["blondehair", "boyfriendsmemo", "deadrabbit", "glassfragment", "hairbow", "hairbrush", "jewelry",
+                       "jewelerybox", "jmyersmemorial", "judithsjournal", "judithstombstone", "lockofhair", "memorialflower",
+                       "mirrorshard", "reflectivefragment", "scratchedmirror", "tackyearrings", "tombstonepiece", "tuftofhair", "vanitymirror"
+                       ],
+
+    "Hag": ["bloodiedmud", "bloddiedwater", "bogwater", "crackedturtleegg", "cypressnecklet", "deadflymud", "disfiguredear", "dragonflywings",
+            "driedcicada", "granmasheart", "halfeggshell", "mintrag", "powderedeggshell", "pussywillowcatkins", "ropenecklet", "rustyshackles",
+            "scarredhand", "swamporchidnecklace", "waterloggedshoe", "willowwreath"
+            ],
+
+    "Doctor": ["calmcartersnotes", "calmclass", "diciplinecartersnotes", "diciplineclass", "diciplineclass", "highstimuluselectrode", "interviewtape",
+               "iridescentking", "mapleknight", "moldyelectrode", "obediencecartersnotes", "ordercartersnotes", "orderclass", "polishedelectrode",
+               "restraintcartersnotes", "restraintclass", "scrappedtape", "cartersnotes"
+               ],
+
+    "Huntress": ["amanitatoxin", "bandagedhaft", "begrimedhead", "berustoxin", "coarsestone", "deerskingloves", "finestone", "flowbabushka",
+                 "glowingconcoction", "infantrybelt", "iridescenthead", "leatherloop", "mannagrassbraid", "oakhaft", "pungentfiale", "rustyhead",
+                 "shinypin", "venomousconcoction", "yewseedbrew", "yewseedconcoction"
+                 ],
+
+    "SD": ["blackbox", "bluedress", "catblock", "classphoto", "gardenrake", "greendress", "jumprope", "kidsdrawing",
+                       "nancysmasterpiece", "nancyssketch", "outdoorrope", "paintthinner", "pillbottle", "prototypeclaw", "redpaintbrush", "sheepblock",
+                       "swingchains", "unicornblock", "woolshirt", "zblock"
+                       ],
+
+    "Pig": ["amandasletter", "amandassecret", "bagofgears", "combatstraps", "crateofgears", "facemask", "interlockingrazor", "jigsawannotagedplan",
+            "jigsawsketch", "johnsmedicalfile", "lastwill", "razerwire", "rulessetn2", "rustyattachments", "shatteredsyringe", "slowreleasetoxin",
+            "tamperedtimer", "utilityblades", "videotape", "workshopgrease"
+            ]
+}

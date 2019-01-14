@@ -1,0 +1,13 @@
+{
+    "Ace Visconti": ["av_head0", "av_legs", "av_torso"],
+    "Bill Overbeck": ["bo_head0, bo_legs0", "bo_torso0"],
+    "Claudette Morrelle": ["c_head0", "c_legs0", "c_torso0", "cm_head0", "cm_legs0", "cm_osj", "cm_torso0"],
+    "Dwight Fairfield": ["d_head0", "d_legs0", "d_torso0", "df_head0", "df_legs0", "df_torso0"],
+    "David King": ["dk_head0", "dk_legs0", "dk_torso0"],
+    "Feng Min": ["fm_head0", "fm_legs0", "fm_torso0"],
+    "David Trapp": ["fs_head0", "fs_legs0", "fs_torso0"],
+    "Kate Denson": ["gs_head0", "gs_legs0", "gs_torso0"],
+    "Jake Park": ["j_head0", "j_legs0", "j_torso0", "jp_head0", "jp_legs0", "jp_torso0"],
+    "Laurie Strode": ["ls_torso0", "ls_legs0", "ls_head0"],
+    "Meg Thomas": ["m_head0", "m_legs0", "m_torso0", "mt_head0", "mt_legs0", "mt_mask", "mt_rtlh", "mt_torso0"]
+}
