@@ -1,10 +1,10 @@
-#Know the Killer - Know Yourself
+# Know the Killer - Know Yourself
 Welcome to the app to make it so you can finally have an edge against killers as a survivor! 
 Thanks to BHV not knowing how to properly encrypt communications we arrive at this attempt to reverse the plaintext information into usable information! 
 
 They nerf us, we figure out ways around it!
 
-##Setup
+## Setup
 Basically just run `pip install -r requirements.txt` to get python up to date
 
 Then update the `config.ini` file under `Utilities` to:
