@@ -4,10 +4,10 @@ from DBDSniffer import QueuedOutput
 from DBDSniffer import Sniffer
 import time
 
+from DBDSniffer.TkAppThreadedVars import ThreadedVars
+
 
 class SerialThread(threading.Thread):
-    sniffer_thread_quit = False
-
     def __init__(self, queue):
         threading.Thread.__init__(self)
         self.queue = queue
@@ -24,7 +24,7 @@ class SerialThread(threading.Thread):
 
         try:
             while True:
-                if self.sniffer_thread_quit:
+                if ThreadedVars.instance().sniffer_thread_quit:
                     raise KeyboardInterrupt()
                 time.sleep(2)
         except KeyboardInterrupt:

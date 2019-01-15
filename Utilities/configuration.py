@@ -13,6 +13,14 @@ config.read(working_directory + "config.ini")
 log_file = None
 
 
+def get_working_directory():
+    return working_directory
+
+
+def get_root_directory():
+    return os.sep.join(working_directory.split(os.sep)[:-2]) + os.sep
+
+
 def get(section, option):
     return config.get(section=section, option=option)
 
@@ -31,3 +39,7 @@ def getfloat(section, option):
 
 def get_wd(section, option):
     return working_directory + config.get(section=section, option=option)
+
+
+def get_with_root_dir(section, option):
+    return get_root_directory() + config.get(section=section, option=option)

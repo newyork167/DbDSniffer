@@ -54,18 +54,16 @@ class Sniffer(Thread):
             config.getint('network', 'port_min'),
             config.getint('network', 'port_max')
         )
-        sniff(filter=port_filter, prn=self.print_packet, store=0)
+        sniff(filter=port_filter, prn=self.print_packet, store=0, stop_filter=ThreadedVars.instance().sniffer_should_quit())
 
     def join(self, timeout=None):
         self.stop_sniffer.set()
         super().join(timeout)
 
-    def should_stop_sniffer(self, packet):
-        return False
-
     def check_for_stun_packet(self, packet):
         seconds_since_last_check = (datetime.now() - self.last_stun_check_time).total_seconds()
         if seconds_since_last_check > config.getint('network', 'stun_check_interval_seconds'):
+            self.last_stun_check_time = datetime.now()
             ip_layer = packet.getlayer(IP)
             ip_dest = ip_layer.dst
             ip_src = ip_layer.src

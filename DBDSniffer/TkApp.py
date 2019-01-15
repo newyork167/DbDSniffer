@@ -214,5 +214,5 @@ class App(tk.Tk):
 
     def on_closing(self):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            Sniffer.Sniffer().sniffer_thread_quit = True
+            ThreadedVars.instance().sniffer_thread_quit = True
             self.destroy()

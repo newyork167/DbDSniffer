@@ -33,22 +33,22 @@ class Killer:
 
     @staticmethod
     def get_killers():
-        killers = json.load(open(config.get('killer', 'killer_json')))
+        killers = json.load(open(config.get_with_root_dir('killer', 'killer_json')))
         return killers
 
     @staticmethod
     def get_killer_vars():
-        killers = dict(json.load(open(config.get('killer', 'killer_vars_json'))))
+        killers = dict(json.load(open(config.get_with_root_dir('killer', 'killer_vars_json'))))
         return killers
 
     @staticmethod
     def get_killer_perks():
-        killer_perks = list(json.load(open(config.get('killer', 'killer_perks_json'))).values())
+        killer_perks = list(json.load(open(config.get_with_root_dir('killer', 'killer_perks_json'))).values())
         return killer_perks
 
     @staticmethod
     def get_killer_addons():
-        killer_perks = json.load(open(config.get('killer', 'killer_addons_json')))
+        killer_perks = json.load(open(config.get_with_root_dir('killer', 'killer_addons_json')))
         return killer_perks
 
     @staticmethod

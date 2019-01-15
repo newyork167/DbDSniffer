@@ -3,7 +3,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 
-from Utilities.configuration import config
+import Utilities.configuration as config
 
 
 def get_killer_folders(addon_path):
@@ -16,7 +16,7 @@ def get_addons_from_folder(folder):
 
 def build_addons():
     killer_addons = {}
-    killer_folders = get_killer_folders(config.get('utilities', 'addon_folder_path'))
+    killer_folders = get_killer_folders(config.get_with_root_dir('utilities', 'addon_folder_path'))
     for folder in killer_folders:
         killer = folder.split('\\')[-1]
         addons = get_addons_from_folder(folder)
@@ -24,7 +24,7 @@ def build_addons():
         addons = [a.lower() for a in addons]
         killer_addons[killer] = addons
 
-    with open(config.get('killer', 'killer_addons_json'), 'w+') as json_output_file:
+    with open(config.get_with_root_dir('killer', 'killer_addons_json'), 'w+') as json_output_file:
         json_output_file.write(json.dumps(killer_addons))
 
 
